@@ -1,0 +1,74 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<dom-module id="my-data">
+  <template>
+    <style>
+      :host {
+        display: none;
+      }
+    </style>
+  </template>
+
+  <script>
+    class MyData extends Polymer.Element {
+      static get is() { return 'my-data'; }
+
+      static get properties() {
+        return {
+          proliferating: {
+            type: Object,
+            value: {
+              value: false,
+            }, // shared among instances
+          },
+          instances: {
+            type: Array,
+            value: [], // shared among instances
+          },
+          share: {
+            type: Object,
+            value: {
+              value: ''
+            }, // shared among instances
+          },
+        };
+      }
+
+      static get observers() {
+        return [
+          'proliferateChange(share.*)',
+        ];
+      }
+
+      ready() {
+        // update list of instances
+        this.instances.push(this);
+
+        const detail = {
+          base: this.share,
+          path: 'share',
+          value: this.share,
+        };
+        this.dispatchEvent(new CustomEvent('share-changed', {detail}));
+      }
+
+      proliferateChange(changes) {
+        if (!this.proliferating.value) {
+          // notify hosts of other instances
+          this.instances.forEach((instance) => {
+            if (instance !== this) {
+              console.info(`event from my-data in:${this.parentNode.host.nodeName} to my-data in:${instance.parentNode.host.nodeName}`);
+              this.proliferating.value = true;
+              instance.dispatchEvent(
+                new CustomEvent('share-changed', {detail:changes})
+              );
+              this.proliferating.value = false;
+            }
+          });
+        }
+      }
+    }
+
+    window.customElements.define(MyData.is, MyData);
+  </script>
+</dom-module>
